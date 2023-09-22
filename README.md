@@ -1,6 +1,6 @@
-# easyManagerSDK是用来对接easyManager应用程序对外开放开发接口用的.
+# easyManagerSDK是用来对接easyManager应用程序对外开放开发接口用的
 
-# 它支持调用easyManager应用里已有程序功能的api,更加方便与快捷的使用.
+# 它支持调用easyManager应用里已有程序功能的api,更加方便与快捷的使用
 
 例子:
 
