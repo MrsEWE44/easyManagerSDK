@@ -4,7 +4,7 @@
 
 例子:
 
-```
+```Java
     //如果你想终止一个后台进程,你应该这样做
     easyManagerClient ec = new easyManagerClient();
     if(ec.getServerStatus()){
