@@ -7,15 +7,17 @@ import com.easymanager.core.entity.TransmissionEntity;
 import com.easymanager.core.entity.easyManagerClientEntity;
 import com.easymanager.core.entity.easyManagerServiceEntity;
 import com.easymanager.core.utils.CMD;
+import com.easymanager.entitys.MyPackageInfo;
 import com.easymanager.enums.easyManagerEnums;
 import com.easymanager.mylife.adbClient;
 
+import java.util.List;
 
 
 /**
  * <pre>
  *     easyManagerClient是用来对接easymanager服务的.<br/>
- *     它提供了easy manager所提供的功能接口实现,你需要做的，只是调用相同的api接口即可使用easy manager的功能.<br/>
+ *     它提供了easymanager所提供的功能接口实现,你需要做的，只是调用相同的api接口即可使用easy manager的功能.<br/>
  *     详情可以查看公开的函数帮助.<br/>
  *
  * </pre>
@@ -43,8 +45,7 @@ public class easyManagerClient {
      *
      * */
     public Boolean getServerStatus(){
-        TransmissionEntity entity = new TransmissionEntity(null,null,null,1);
-        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,entity,easyManagerEnums.GET_SERVER_STATUS);
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,null,easyManagerEnums.GET_SERVER_STATUS);
         return checkBool(adben2);
     }
 
@@ -64,14 +65,6 @@ public class easyManagerClient {
     public boolean isROOT(){
         easyManagerClientEntity adben2 = new easyManagerClientEntity(null,null,easyManagerEnums.IS_ROOT);
         return checkBool(adben2);
-    }
-
-    @Deprecated
-    public IBinder getSystemServer(String serverName, Context context){
-        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,new TransmissionEntity(serverName,null,context.getPackageName(),0),easyManagerEnums.GET_SYSTEM_SERVICE);
-        easyManagerServiceEntity serviceEntity = putOptionOnServer(adben2);
-        getError(serviceEntity);
-        return (IBinder) serviceEntity.getObject();
     }
 
     private boolean checkBool(easyManagerClientEntity adben2){
@@ -126,20 +119,23 @@ public class easyManagerClient {
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,0);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,0,uid);<br/><br/>
      *               参数说明:<br/>
      *               pkgname : 你想要终止掉的应用包名<br/>
      *                      比如: com.abc <br/>
      *
      *               reqpkg: 这个参数要传入你客户端的包名.<br/>
      *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
      *
      *
      *               最终你应该这样使用的: <br/>
      *                      String pkgname = " com.abc";<br/>
      *                      String reqpkg = "com.explam";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,0);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,0,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.killpkg(te); <br/><br/><br/>
      *
@@ -161,7 +157,7 @@ public class easyManagerClient {
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(pkgname,opt_str,reqpkg,0);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,opt_str,reqpkg,0，uid);<br/><br/>
      *               参数说明:<br/>
      *               pkgname : 你想要操作的包名.<br/>
      *               opt_str :  这个参数为需要权限名称加上授权的状态.<br/>
@@ -175,14 +171,17 @@ public class easyManagerClient {
      *                          <br/><br/>
      *               reqpkg: 这个参数要传入你客户端的包名.<br/>
      *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/><br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
      *
      *               最终你应该这样使用的: <br/>
      *               这样可以拒绝掉包名为com.abc应用的短信写入权限.<br/>
      *                      String pkgname = "com.abc";<br/>
      *                      String opt_str = "android:write_sms---ignore";<br/>
      *                      String reqpkg = "com.explam";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, opt_str ,reqpkg,0);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, opt_str ,reqpkg,0,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.setAppopsModeCore(te); <br/><br/><br/>
      *
@@ -202,21 +201,21 @@ public class easyManagerClient {
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(pkgname,opt_str,reqpkg,APP_PERMIS_INDEX);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,opt_str,reqpkg,APP_PERMIS_INDEX,uid);<br/><br/>
      *               参数说明:<br/>
      *               pkgname : 你想要操作的包名.<br/>
      *               opt_str :  这个参数为需要授权的状态.<br/>
-     *                      0-9的授权状态为: {<br/>
+     *                      0-15的授权状态为: {<br/>
      *                          default : 默认状态.<br/>
      *                          ignore  : 始终忽略状态.<br/>
      *                          allow : 始终允许状态.<br/>
      *                          foreground :  运行时允许.<br/>
      *                      };<br/><br/>
-     *                      10的授权状态为:{<br/>
+     *                      16的授权状态为:{<br/>
      *                          true: 允许状态.<br/>
      *                          false: 拒绝状态.<br/>
      *                      }<br/>
-     *                      11的授权状态为:{<br/>
+     *                      17的授权状态为:{<br/>
      *                          active : 活跃状态.<br/>
      *                          working_set : 工作状态.<br/>
      *                          frequent : 常用状态.<br/>
@@ -227,7 +226,7 @@ public class easyManagerClient {
      *               reqpkg: 这个参数要传入你客户端的包名.<br/>
      *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
      *               APP_PERMIS_INDEX: 这个参数为权限数字.每一个数字对应一个权限集合.<br/>
-     *                      0-9分别为: {<br/>
+     *                      0-15分别为: {<br/>
      *                          0:"通话/短信相关",<br/>
      *                          1:"存储",<br/>
      *                          2:"剪切板",<br/>
@@ -238,15 +237,23 @@ public class easyManagerClient {
      *                          7:"日历",<br/>
      *                          8:"传感器扫描",<br/>
      *                          9:"通知"<br/>
+     *                          10:"生物指纹识别"<br/>
+     *                          11:"弹窗"<br/>
+     *                          12:"无障碍"<br/>
+     *                          13:"读取账户"<br/>
+     *                          14:"写入系统设置"<br/>
+     *                          15:"读取设备标识"<br/>
      *                      };
      *
      *              <br/><br/>
-     *                      10-11分别为: {<br/>
-     *                         10:"强制应用待机",<br/>
-     *                         11:"应用待机活动"<br/>
+     *                      16-17分别为: {<br/>
+     *                         16:"强制应用待机",<br/>
+     *                         17:"应用待机活动"<br/>
      *                     };
      *
      *               <br/>
+     *
+     *                uid: 需要操作的用户uid. <br/><br/>
      *
      *
      *               最终你应该这样使用的: <br/>
@@ -255,8 +262,10 @@ public class easyManagerClient {
      *                      String opt_str = "ignore";<br/>
      *                      String reqpkg = "com.explam";<br/>
      *                      int APP_PERMIS_INDEX = 0;<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, opt_str ,reqpkg,APP_PERMIS_INDEX);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, opt_str ,reqpkg,APP_PERMIS_INDEX,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.setAppopsMode(te); <br/><br/><br/>
      *
@@ -278,20 +287,23 @@ public class easyManagerClient {
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(apkpath,null,reqpkg,0);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(apkpath,null,reqpkg,0,uid);<br/><br/>
      *               参数说明:<br/>
      *               apkpath : 本地apk完整路径<br/>
      *                      比如: /data/local/tmp/base.apk <br/>
      *
      *               reqpkg: 这个参数要传入你客户端的包名.<br/>
      *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
      *
      *
      *               最终你应该这样使用的: <br/>
      *                      String apkpath = "/data/local/tmp/base.apk";<br/>
      *                      String reqpkg = "com.explam";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(apkpath, null ,reqpkg,0);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(apkpath, null ,reqpkg,0,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.installAPK(te); <br/><br/><br/>
      *
@@ -313,19 +325,21 @@ public class easyManagerClient {
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,0);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,0,uid);<br/><br/>
      *               参数说明:<br/>
      *               pkgname : 你想要卸载的包名<br/>
      *
      *               reqpkg: 这个参数要传入你客户端的包名.<br/>
      *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
      *
      *
      *               最终你应该这样使用的: <br/>
      *                      String pkgname = "com.eeee";<br/>
      *                      String reqpkg = "com.explam";<br/>
-     *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,0);<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,0,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.uninstallAPK(te); <br/><br/><br/>
      *
@@ -340,14 +354,14 @@ public class easyManagerClient {
     }
 
     /**
-     * 设置已安装软件是否为冻结或者禁用状态<br/>
+     * 设置已安装软件或者程序组件是否为冻结或者禁用状态<br/>
      * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
      *
      * @param entity 需要传入一个TransmissionEntity实体类变量
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,state);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,state,uid);<br/><br/>
      *               参数说明:<br/>
      *               pkgname : 你想要操作的包名<br/>
      *
@@ -357,6 +371,7 @@ public class easyManagerClient {
      *               state: 设置应用是否为隐藏状态.<br/>
      *                      1为启用.<br/>
      *                      3为禁用. <br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
      *
      *
      *
@@ -364,8 +379,10 @@ public class easyManagerClient {
      *                      String pkgname = "com.eeee";<br/>
      *                      String reqpkg = "com.explam";<br/>
      *                      int state = 3; <br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,state);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,state,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.setComponentOrPackageEnabledState(te); <br/><br/><br/>
      *
@@ -387,7 +404,7 @@ public class easyManagerClient {
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,state);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,state,uid);<br/><br/>
      *               参数说明:<br/>
      *               pkgname : 你想要操作的包名<br/>
      *
@@ -398,14 +415,18 @@ public class easyManagerClient {
      *                      0为显示.<br/>
      *                      1为隐藏. <br/>
      *
+     *               uid: 需要操作的用户uid. <br/><br/>
+     *
      *
      *
      *               最终你应该这样使用的: <br/>
      *                      String pkgname = "com.eeee";<br/>
      *                      String reqpkg = "com.explam";<br/>
      *                      int state = 0; <br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,state);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,state,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.setPackageHideState(te); <br/><br/><br/>
      *
@@ -434,14 +455,18 @@ public class easyManagerClient {
      *                      比如:android.Manifest.permission.UPDATE_APP_OPS_STATS <br/>
      *               reqpkg: 这个参数要传入你客户端的包名.<br/>
      *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
+     *
      *
      *
      *               最终你应该这样使用的: <br/>
      *                      String pkgname = "com.eeee";<br/>
      *                      String permission_str = "android.Manifest.permission.UPDATE_APP_OPS_STATS";<br/>
      *                      String reqpkg = "com.explam";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, permission_str ,reqpkg,0);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, permission_str ,reqpkg,0,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.revokeRuntimePermission(te); <br/><br/><br/>
      *
@@ -463,7 +488,7 @@ public class easyManagerClient {
      *
      * <pre>
      *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
-     *               TransmissionEntity te = new TransmissionEntity(pkgname,permission_str,reqpkg,0);<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,permission_str,reqpkg,0,uid);<br/><br/>
      *               参数说明:<br/>
      *               pkgname : 你想要操作的包名<br/>
      *
@@ -472,13 +497,18 @@ public class easyManagerClient {
      *               reqpkg: 这个参数要传入你客户端的包名.<br/>
      *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
      *
+     *               uid: 需要操作的用户uid. <br/><br/>
+     *
+     *
      *
      *               最终你应该这样使用的: <br/>
      *                      String pkgname = "com.eeee";<br/>
      *                      String permission_str = "android.Manifest.permission.UPDATE_APP_OPS_STATS";<br/>
      *                      String reqpkg = "com.explam";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
      *
-     *                      TransmissionEntity te = new TransmissionEntity(pkgname, permission_str ,reqpkg,0);<br/>
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, permission_str ,reqpkg,0,uid);<br/>
      *                      easyManagerClient ec = new easyManagerClient(); <br/>
      *                      ec.grantRuntimePermission(te); <br/><br/><br/>
      *
@@ -600,11 +630,276 @@ public class easyManagerClient {
      *
      * */
     public void requestGrantUser(Context context){
-        TransmissionEntity entity = new TransmissionEntity(context.getPackageName(), context.getFilesDir().toString(), context.getPackageName(), -1);
+        TransmissionEntity entity = new TransmissionEntity(context.getPackageName(), context.getFilesDir().toString(), context.getPackageName(), -1,getCurrentUserID());
         easyManagerClientEntity adben2 = new easyManagerClientEntity(null,entity,easyManagerEnums.GRANT_USER);
         easyManagerServiceEntity eee = putOptionOnServer(adben2);
         getError(eee);
     }
+
+    /**
+     * 创建一个分身用户<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     * @param context 需要传入一个Context对象，用于获取请求者包名以及其它内容
+     *
+     * <pre>
+     *               在使调用这个函数的时候，你应该这样使用的: <br/>
+     *                Context context = this;<br/>
+     *                easyManagerClient ec = new easyManagerClient(); <br/>
+     *                ec.createAppClone(context); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public void createAppClone(Context context) {
+        TransmissionEntity entity = new TransmissionEntity(null,null,context.getPackageName(),0,getCurrentUserID());
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,entity,easyManagerEnums.APP_CLONE);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+    }
+
+    /**
+     * 删除一个分身用户<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     * @param context 需要传入一个Context对象，用于获取请求者包名以及其它内容
+     * @param removeuid 需要传入一个你想删除的分身UID
+     *
+     * <pre>
+     *               在使调用这个函数的时候，你应该这样使用的: <br/>
+     *                Context context = this;<br/>
+     *                int removeuid = 10; //这个是需要被删除的分身用户UID,必须是整数类型<br/>
+     *                easyManagerClient ec = new easyManagerClient(); <br/>
+     *                ec.removeAppClone(context,removeuid); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public void removeAppClone(Context context , int removeuid) {
+        TransmissionEntity entity = new TransmissionEntity(null,null,context.getPackageName(),0,removeuid);
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,entity,easyManagerEnums.APP_CLONE_REMOVE);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+    }
+
+    /**
+     * 启动一个分身用户<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     * @param context 需要传入一个Context对象，用于获取请求者包名以及其它内容
+     * @param startuid 需要传入一个你想启动的分身UID
+     *
+     * <pre>
+     *               在使调用这个函数的时候，你应该这样使用的: <br/>
+     *                Context context = this;<br/>
+     *                int startuid = 10; //这个是需要被启动的分身用户UID,必须是整数类型<br/>
+     *                easyManagerClient ec = new easyManagerClient(); <br/>
+     *                ec.startAppClone(context,startuid); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public void startAppClone(Context context , int startuid) {
+        TransmissionEntity entity = new TransmissionEntity(null,null,context.getPackageName(),0,startuid);
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,entity,easyManagerEnums.START_USER_ID);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+    }
+
+    /**
+     * 获取本地所有分身用户的UID<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     *
+     * <pre>
+     *               在使调用这个函数的时候，你应该这样使用的: <br/>
+     *                easyManagerClient ec = new easyManagerClient(); <br/>
+     *                String[] users = ec.getAppCloneUsers();//会返回一个字符串数组,里面包含了本地所有分身用户的UID字符串 <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public String[] getAppCloneUsers() {
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,null,easyManagerEnums.APP_CLONE_GETUSERS);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+        try {
+            return (String[]) eee.getObject();
+        }catch (Exception e){
+            return new String[]{"0"};
+        }
+    }
+
+    /**
+     * 获取本地所有已安装的应用<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     * @param entity 需要传入一个TransmissionEntity实体类变量
+     *
+     * <pre>
+     *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(null,null,reqpkg,0,uid);<br/><br/>
+     *               参数说明:<br/>
+     *
+     *               reqpkg: 这个参数要传入你客户端的包名.<br/>
+     *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
+     *
+     *
+     *               最终你应该这样使用的: <br/>
+     *
+     *                      String reqpkg = "com.explam";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
+     *
+     *                      TransmissionEntity te = new TransmissionEntity(null, null ,reqpkg,0,uid);<br/>
+     *                      easyManagerClient ec = new easyManagerClient(); <br/>
+     *                      List<MyPackageInfo> pkgs = ec.getInstalledPackages(te); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public List<MyPackageInfo> getInstalledPackages(TransmissionEntity entity){
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,entity,easyManagerEnums.QUERY_PACKAGES_UID);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+        return (List<MyPackageInfo>) eee.getObject();
+    }
+
+    /**
+     * 将应用信息转化为自定义的MyPackageInfo类型<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     * @param entity 需要传入一个TransmissionEntity实体类变量
+     *
+     * <pre>
+     *               在使用这个函数的时候，你的TransmissionEntity对象应该按照以下示例编写:<br/><br/>
+     *               TransmissionEntity te = new TransmissionEntity(pkgname,null,reqpkg,0,uid);<br/><br/>
+     *               参数说明:<br/>
+     *               pkgname : 你想要转化的应用包名<br/>
+     *                      比如: com.abc <br/>
+     *
+     *               reqpkg: 这个参数要传入你客户端的包名.<br/>
+     *                      如果你的客户端包名为"com.explam"那你就需要传入这个包名.<br/>
+     *               uid: 需要操作的用户uid. <br/><br/>
+     *
+     *
+     *               最终你应该这样使用的: <br/>
+     *                      String pkgname = " com.abc";<br/>
+     *                      String reqpkg = "com.explam";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
+     *
+     *                      TransmissionEntity te = new TransmissionEntity(pkgname, null ,reqpkg,0,uid);<br/>
+     *                      easyManagerClient ec = new easyManagerClient(); <br/>
+     *                      MyPackageInfo myPackageInfo = ec.getMyPackageInfo(te); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public MyPackageInfo getMyPackageInfo(TransmissionEntity entity){
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,entity,easyManagerEnums.GET_PACKAGEINFO_UID);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+        return (MyPackageInfo) eee.getObject();
+    }
+
+    /**
+     * 获取当前正在使用的用户UID<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     *
+     * <pre>
+     *               在使调用这个函数的时候，你应该这样使用的: <br/>
+     *                easyManagerClient ec = new easyManagerClient(); <br/>
+     *                int uid = ec.getCurrentUserID(); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public int getCurrentUserID(){
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,null,easyManagerEnums.GET_CURRENT_USER_ID);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+        return (Integer) eee.getObject();
+    }
+
+    /**
+     * 获取软件或者程序组件状态<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     * @param context 需要传入一个Context对象，用于获取请求者包名以及其它内容
+     * @param pkgname 需要传入一个你想获取的程序包名
+     * @param componentName 需要传入一个程序组件名称
+     * @param uid 需要操作的用户uid
+     *
+     * <pre>
+     *               在使用这个函数的时候，你应该这样使用的: <br/>
+     *                      Context context =  this;<br/>
+     *                      String pkgname = "com.eeee";<br/>
+     *                      String componentName = ".MainActivity";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
+     *
+     *                      easyManagerClient ec = new easyManagerClient(); <br/>
+     *                      int state = ec.getComponentEnabledSetting(context,pkgname,componentName,uid); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public int getComponentEnabledSetting(Context context , String pkgname,String componentName,int uid){
+        TransmissionEntity transmissionEntity = new TransmissionEntity(pkgname, componentName, context.getPackageName(), 0, uid);
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,transmissionEntity,easyManagerEnums.GET_COMPONENT_ENABLED_SETTING);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+        return (Integer) eee.getObject();
+    }
+
+    /**
+     * 获取软件权限的状态<br/>
+     * 调用该函数,最好要ROOT工作模式,国内部分定制ui存在权限不足的问题.<br/>
+     *
+     * @param context 需要传入一个Context对象，用于获取请求者包名以及其它内容
+     * @param pkgname 需要传入一个你想获取的程序包名
+     * @param opstr 需要传入一个程序的权限名称
+     * @param uid 需要操作的用户uid
+     *
+     * <pre>
+     *               在使用这个函数的时候，你应该这样使用的: <br/>
+     *                      Context context =  this;<br/>
+     *                      String pkgname = "com.eeee";<br/>
+     *                      String opstr = "android.permission.WRITE_EXTERNAL_STORAGE";<br/>
+     *                      //如果你想操作当前用户的应用,应该调用getCurrentUserID()函数,否则,就需要填入一个整数型的用户UID.<br/>
+     *                      int uid = getCurrentUserID();<br/>
+     *
+     *                      easyManagerClient ec = new easyManagerClient(); <br/>
+     *                      int state = ec.checkOp(context,pkgname,AppOpsManager.permissionToOp(opstr),uid); <br/><br/><br/>
+     *
+     *
+     *</pre>
+     *
+     * */
+    public int checkOp(Context context , String pkgname,String opstr,int uid){
+        TransmissionEntity transmissionEntity = new TransmissionEntity(pkgname, opstr, context.getPackageName(), 0, uid);
+        easyManagerClientEntity adben2 = new easyManagerClientEntity(null,transmissionEntity,easyManagerEnums.CHECK_OP);
+        easyManagerServiceEntity eee = putOptionOnServer(adben2);
+        getError(eee);
+        return (Integer) eee.getObject();
+    }
+
+
+
+
+
+
     /**
      * 抛出运行时异常，获取服务端返回的错误信息内容
      *

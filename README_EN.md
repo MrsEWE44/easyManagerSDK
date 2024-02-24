@@ -10,7 +10,8 @@ example:
     if(ec.getServerStatus()){
         String pkgname = "com.abc";
         Context context = this;
-        TransmissionEntity te = new TransmissionEntity(pkgname, null ,context.getPackageName(),0);
+        int uid = ec.getCurrentUserID();
+        TransmissionEntity te = new TransmissionEntity(pkgname, null ,context.getPackageName(),0,uid);
         ec.killpkg(te);
     }
 ```

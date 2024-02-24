@@ -10,7 +10,8 @@ easyManagerSDK是用来对接easyManager应用程序对外开放开发接口用�
     if(ec.getServerStatus()){
         String pkgname = "com.abc";
         Context context = this;
-        TransmissionEntity te = new TransmissionEntity(pkgname, null ,context.getPackageName(),0);
+        int uid = ec.getCurrentUserID();
+        TransmissionEntity te = new TransmissionEntity(pkgname, null ,context.getPackageName(),0,uid);
         ec.killpkg(te);
     }
 ```
